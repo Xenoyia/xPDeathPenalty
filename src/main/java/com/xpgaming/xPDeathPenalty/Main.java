@@ -29,7 +29,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.Optional;
 
-@Plugin(id = Main.id, name = Main.name, version = "0.1")
+@Plugin(id = Main.id, name = Main.name, version = "0.2")
 public class Main {
     public static final String id = "xpdeathpenalty";
     public static final String name = "xP// Death Penalty";
@@ -49,9 +49,23 @@ public class Main {
     {
         if (event.getTargetEntity() instanceof Player) {
             boolean glitchedDeath = false;
-            if(damageSrc == DamageSource.inWall) glitchedDeath = true;
-            else if(damageSrc == DamageSource.outOfWorld) glitchedDeath = true;
-            else if(damageSrc == DamageSource.flyIntoWall) glitchedDeath = true;
+            String reasonForDeath = "other";
+            if(damageSrc == DamageSource.inWall) {
+                reasonForDeath = "suffocated in wall";
+                glitchedDeath = true;
+            }
+            else if(damageSrc == DamageSource.outOfWorld) {
+                reasonForDeath = "fell out of world";
+                glitchedDeath = true;
+            }
+            else if(damageSrc == DamageSource.flyIntoWall) {
+                reasonForDeath = "flew into wall";
+                glitchedDeath = true;
+            } else if(damageSrc == DamageSource.fall) {
+                reasonForDeath = "fall damage";
+            } else if(damageSrc == DamageSource.fallingBlock) {
+                reasonForDeath = "falling blocks";
+            }
             Player player = (Player) event.getTargetEntity();
             Optional<UniqueAccount> uOpt = economyService.getOrCreateAccount(player.getUniqueId());
             if (uOpt.isPresent()) {
@@ -63,14 +77,15 @@ public class Main {
                     //maximum of 500 coins taken.
                     amountToWithdraw = BigDecimal.valueOf(500);
                 }
-                if(glitchedDeath) {
-                    player.sendMessage(Text.of("\u00A7f[\u00A76Death Penalty\u00A7f] \u00A76You died in a strange way, no money was taken!"));
-                    log.info(player.getName() + " had a glitched death at X" + df.format(player.getLocation().getX()) + " Y" + df.format(player.getLocation().getY()) + " Z" + df.format(player.getLocation().getZ()) + ". They would've lost " + amountToWithdraw + " coins.");
-                }
-                else {
-                    removeMoney(player, amountToWithdraw);
-                    player.sendMessage(Text.of("\u00A7f[\u00A76Death Penalty\u00A7f] \u00A76You lost \u00A7e" + amountToWithdraw.setScale(2, RoundingMode.CEILING) + " coins \u00A76from dying!"));
-                    log.info(player.getName() + " had a non-glitched death at X" + df.format(player.getLocation().getX()) + " Y" + df.format(player.getLocation().getY()) + " Z" + df.format(player.getLocation().getZ()) +". They lost "+amountToWithdraw+" coins.");
+                if(!player.getWorld().getName().equalsIgnoreCase("Event") && !player.getWorld().getName().equalsIgnoreCase("Hub") && !player.getWorld().getName().equalsIgnoreCase("Creative")) {
+                    if (glitchedDeath) {
+                        player.sendMessage(Text.of("\u00A7f[\u00A76Death Penalty\u00A7f] \u00A76You died in a strange way, no money was taken!"));
+                        log.info(player.getName() + " had a glitched death at X" + df.format(player.getLocation().getX()) + " Y" + df.format(player.getLocation().getY()) + " Z" + df.format(player.getLocation().getZ()) + ". They would've lost " + amountToWithdraw + " coins.");
+                    } else {
+                        removeMoney(player, amountToWithdraw);
+                        player.sendMessage(Text.of("\u00A7f[\u00A76Death Penalty\u00A7f] \u00A76You lost \u00A7e" + amountToWithdraw.setScale(2, RoundingMode.CEILING) + " coins \u00A76from dying!"));
+                        log.info(player.getName() + " had a non-glitched death at X" + df.format(player.getLocation().getX()) + " Y" + df.format(player.getLocation().getY()) + " Z" + df.format(player.getLocation().getZ()) + ". They lost " + amountToWithdraw + " coins.");
+                    }
                 }
             }
         }
@@ -89,6 +104,6 @@ public class Main {
 
     @Listener (beforeModifications = true)
     public void onGameInitialization(GameInitializationEvent event) {
-        log.info("Loaded v0.1!");
+        log.info("Loaded v0.2!");
     }
 }
